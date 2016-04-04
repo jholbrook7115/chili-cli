@@ -1,0 +1,82 @@
+!#/bin/bash bash
+# A weather tool for your command line!
+
+loadCFG (){
+    if [ -r /etc/chili-cli.cfg ]; then
+        . /etc/chili-cli.cfg
+        if [ -r ~/.chili-clirc ]; then
+            . ~/.chili-clirc
+        fi
+    else
+        
+    fi
+}
+cleanCFG (){
+    cfgfile='/etc/chili-cli.cfg'
+    cfgfile_secured='tmp/chili-cli.cfg'
+
+    #cleans the config file to make it well-formed
+    #this if-then block was made using information 
+    #from wiki.bash-hackers.org/howto/conffile 
+    if egrep -q -v '^#|^[^ ]*=[^;]*' "$cfgfile"; then
+        echo "Config file is unclean, cleaning it..." >&2
+        egrep '^#|^[^ ]*=[^;&]*' "$cfgfile" > "$cfgfile_secured"
+        cfgfile="$cfgfile_secured"
+    
+        source "$cfgfile"
+    fi
+}
+
+URL="http://ip-api.com/json"
+if [[ $# -eq 0 ]] ; then
+    weatherInfo="conditions"
+else
+    while [[ $# > 1 ]]
+    do
+        param="$1"
+
+        case $param in
+            -ip|-IP)
+                IP="$2"
+                echo "parameter IP found ${IP}"
+                URL="${URL}/${IP}"
+                #curl "http://ip-api.com/json/$IP"
+                ;;
+            -hourly)
+                weatherInfo="hourly"
+                ;;
+            -forecast)
+                weatherInfo="forecast"
+                ;;
+            -current|-now)
+                weatherInfo="conditions"
+                ;;            
+
+        esac
+        shift
+    done
+fi
+
+#IP=$(dig +short myip.opendns.com @resolver1.opendns.com)
+#IP=71.225.50.118
+location=$(curl -sS "$URL")
+#Regex parsing of json
+#city=$(echo $location | grep -Po '"city":.*?[^\\]",')
+#region=$(echo $location | grep -Po '"region":.*?[^\\]",')
+
+city=$(echo $location | jq -r '.city' | sed -e 's/ /_/g')
+region=$(echo $location | jq -r '.region')
+
+printf "Retreiving weather data for ${city}, ${region}...\n"
+
+apiKey=$(cat "$HOME/apikey")
+wundergroundAPI="http://api.wunderground.com/api/${apiKey}/${weatherInfo}/q/${region}/${city}.json"
+
+#weatherJSON=$(curl $wundergroundAPI)
+weatherJSON=$(cat /root/data.json)
+temp=$(echo "${weatherJSON}" | jq -r '.current_observation' | jq -r '.temperature_string')
+weather=$(echo "${weatherJSON}" | jq -r '.current_observation' | jq -r '.weather')
+
+printf "Temperature: ${temp} \nWeather: ${weather}\n"
+
+exit 0
