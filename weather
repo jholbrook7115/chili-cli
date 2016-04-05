@@ -100,7 +100,7 @@ printf "Retrieving weather data for ${city}, ${region}...\n"
 apiKey=$(cat "$HOME/apikey")
 wundergroundAPI="http://api.wunderground.com/api/${apiKey}/${weatherInfo}/q/${region}/${city}.json"
 echo "$wundergroundAPI"
-weatherJSON=$(curl $wundergroundAPI)
+weatherJSON=$(curl -sS $wundergroundAPI)
 #weatherJSON=$(cat /root/data.json)
 temp=$(echo "${weatherJSON}" | jq -r '.current_observation' | jq -r '.temperature_string')
 weather=$(echo "${weatherJSON}" | jq -r '.current_observation' | jq -r '.weather')
