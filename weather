@@ -59,7 +59,7 @@ cleanCFG ()
 loadCFG
 
 #IP=$(grep "IP" /etc/chili-cli.cfg | 
-echo $IP
+#echo $IP
 URL="http://ip-api.com/json/$IP"
 weatherInfo="conditions"
 if [[ $# -eq 0 ]] ; then
@@ -94,7 +94,7 @@ else
 fi
 
 location=$(curl -sS "$URL")
-echo $location
+#echo $location
 #Regex parsing of json
 #city=$(echo $location | grep -Po '"city":.*?[^\\]",')
 #region=$(echo $location | grep -Po '"region":.*?[^\\]",')
