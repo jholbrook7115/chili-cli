@@ -1,9 +1,15 @@
-!#/bin/bash bash
+#!/bin/bash
 # A weather tool for your command line!
 
-funky ()
+initialize () 
 {
-    echo "printed statement;  how funky!!!!"
+    #create the config files
+    touch "/etc/chili-cli.cfg"
+    touch "$HOME/.chili-clirc"
+    read -p "Set IP for location (leave blank for default):" setIP
+    echo "$setIP"
+    #sed '$ a IP=$setIP' /etc/chili-cli.cfg
+    (echo "IP=$setIP" >> $HOME/.chili-clirc)
 }
 
 loadCFG () 
@@ -12,7 +18,20 @@ if [ -r /etc/chili-cli.cfg ]; then
     . /etc/chili-cli.cfg
         if [ -r ~/.chili-clirc ]; then
             . ~/.chili-clirc
-        fi        
+        fi       
+
+else
+    read -p "No config file was found at //etc//chili-cli.cfg.  Do you want to run initialization? (Y/n) " yn
+    while true; do
+    case $yn in
+        [Yy]* ) initialize; 
+                . /etc/chili-cli.cfg
+                break;;
+        [Nn]* ) break;;
+        * ) echo "Please answer yes or no. "
+    esac
+    done
+    source /etc/chili-cli.cfg
 fi
 
 if [ -r ~/.chili-clirc ]; then
@@ -36,25 +55,12 @@ cleanCFG ()
 }
 
 #create a config file locally
-initialize () 
-{
-    echo "Set IP for location (leave blank for default):"
-    read setIP
-    echo "$setIP"
-    
-    touch "$HOME/.chili-clirc"
-
-    echo "IP=$setIP"
-
-    . $HOME/.chili-clirc
-    loadCFG
-}
 #initialize
-#funky
 loadCFG
 
-
-URL="http://ip-api.com/json"
+#IP=$(grep "IP" /etc/chili-cli.cfg | 
+echo $IP
+URL="http://ip-api.com/json/$IP"
 weatherInfo="conditions"
 if [[ $# -eq 0 ]] ; then
     weatherInfo="conditions"
@@ -67,7 +73,7 @@ else
             -ip|-IP)
                 IP="$2"
                 echo "parameter IP found ${IP}"
-                URL="${URL}/${IP}"
+                URL="http://ip-api.com/json/${IP}"
                 #curl "http://ip-api.com/json/$IP"
                 ;;
             -hourly)
@@ -88,6 +94,7 @@ else
 fi
 
 location=$(curl -sS "$URL")
+echo $location
 #Regex parsing of json
 #city=$(echo $location | grep -Po '"city":.*?[^\\]",')
 #region=$(echo $location | grep -Po '"region":.*?[^\\]",')
@@ -99,7 +106,7 @@ printf "Retrieving weather data for ${city}, ${region}...\n"
 
 apiKey=$(cat "$HOME/apikey")
 wundergroundAPI="http://api.wunderground.com/api/${apiKey}/${weatherInfo}/q/${region}/${city}.json"
-echo "$wundergroundAPI"
+#echo "$wundergroundAPI"
 weatherJSON=$(curl -sS $wundergroundAPI)
 #weatherJSON=$(cat /root/data.json)
 temp=$(echo "${weatherJSON}" | jq -r '.current_observation' | jq -r '.temperature_string')
